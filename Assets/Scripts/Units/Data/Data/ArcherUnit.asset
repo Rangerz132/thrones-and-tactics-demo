@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f8bb7ce4d3fc5242896ba3626443a65, type: 3}
+  m_Name: ArcherUnit
+  m_EditorClassIdentifier: 
+  unitType: {fileID: 11400000, guid: cc65ad3fa9584d248a7ccf003a6cc719, type: 2}
+  unitAttack: {fileID: 11400000, guid: 87585750c9918d54e8d49cb2f9de9b40, type: 2}
+  unitName: Archer
+  description: 
+  health: 125

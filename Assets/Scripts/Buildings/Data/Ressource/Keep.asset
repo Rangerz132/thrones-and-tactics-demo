@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1da340f6fab6f214298bb4a04998d55a, type: 3}
+  m_Name: Keep
+  m_EditorClassIdentifier: 
+  buildingType: {fileID: 11400000, guid: 5f6b5815eea31904699bf61aa2198d0b, type: 2}
+  buildingConstruction: {fileID: 11400000, guid: 5e63a9e38d86b7b48bf410ffc6bae125,
+    type: 2}
+  buildingName: Keep
+  description: 
+  icon: {fileID: 21300000, guid: bd76837af860ede4cb80749c286087fc, type: 3}
+  health: 800
+  size: {x: 9, y: 9}
