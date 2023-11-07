@@ -4,158 +4,144 @@ using UnityEngine;
 
 public class UnitManager : MonoBehaviour
 {
-    [SerializeField] private List<Unit> units = new List<Unit>();
-    [SerializeField] private SelectionBox selectionBox;
-    private Vector3 startDragPosition;
-    private Vector3 endDragPosition;
+    [field: SerializeField] public List<Unit> Units { get; private set; } = new List<Unit>();
+    [field: SerializeField] public List<Unit> SelectedUnits { get; private set; } = new List<Unit>();
 
     private void Update()
     {
-        // Left click
-        if (Input.GetMouseButtonDown(0))
-        {
-            AddUnitFromSingleClick();
-
-            startDragPosition = RaycastUtility.MouseToTerrainPosition();
-            endDragPosition = startDragPosition;
-
-            selectionBox.ActivateSelectionBox();
-        }
-
-        // Mouse hold
-        if (Input.GetMouseButton(0))
-        {
-            selectionBox.UpdateSelectionBox(Input.mousePosition);
-        }
-
-        // Mouse Up
-        if (Input.GetMouseButtonUp(0))
-        {
-            AddUnitFromDrag();
-            selectionBox.DeactivateSelectionBox();
-        }
-
         // Right click
         if (Input.GetMouseButtonDown(1))
         {
-            MoveUnits();
+            GiveOrders();
         }
     }
 
     /// <summary>
-    /// Base method to add unit(s)
+    /// Add unit to the selected unit list
     /// </summary>
-    /// <param name="hit"></param>
-    private void AddUnits(RaycastHit hit)
+    /// <param name="unit"></param>
+    public void AddUnit(Unit unit)
     {
-        if (hit.collider.TryGetComponent<Unit>(out Unit unit))
+        if (!SelectedUnits.Contains(unit))
         {
-            if (!units.Contains(unit))
-            {
-                units.Add(unit);
-
-                for (var i = 0; i < units.Count; i++)
-                {
-                    units[i].SelectedTarget.PlaySelectAnimation();
-                    units[i].HealthVisual.PlaySelectAnimation();
-                }
-            }
+            SelectedUnits.Add(unit);
+            unit.SelectedTarget.PlaySelectAnimation();
+            unit.HealthVisual.PlaySelectAnimation();
         }
     }
 
     /// <summary>
-    /// Add one unit to the unit list
+    /// Remove unit to the selected unit list
     /// </summary>
-    private void AddUnitFromSingleClick()
+    /// <param name="unit"></param>
+    public void RemoveUnit(Unit unit)
     {
-        ClearUnits();
-
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
-
-        if (Physics.Raycast(ray, out hit, Mathf.Infinity))
+        if (SelectedUnits.Contains(unit))
         {
-            AddUnits(hit);
+            unit.SelectedTarget.PlayUnselectAnimation();
+            unit.HealthVisual.PlayUnselectAnimation();
+            SelectedUnits.Remove(unit);
         }
     }
 
     /// <summary>
-    /// Add unit(s) to unit list from selection box
+    /// Remove all units to the selected unit list
     /// </summary>
-    private void AddUnitFromDrag()
+    public void ClearSelectedUnits()
     {
-        endDragPosition = RaycastUtility.MouseToTerrainPosition();
-
-        var dragCenter = (startDragPosition + endDragPosition) / 2;
-        var dragSize = (endDragPosition - startDragPosition);
-        dragSize.Set(Mathf.Abs(dragSize.x / 2), 1, Mathf.Abs(dragSize.z / 2));
-
-        RaycastHit[] hits = Physics.BoxCastAll(dragCenter, dragSize, Vector3.up, Quaternion.identity);
-
-        foreach (RaycastHit hit in hits)
+        for (var i = 0; i < SelectedUnits.Count; i++)
         {
-            AddUnits(hit);
+            SelectedUnits[i].SelectedTarget.PlayUnselectAnimation();
+            SelectedUnits[i].HealthVisual.PlayUnselectAnimation();
         }
+
+        SelectedUnits.Clear();
     }
 
     /// <summary>
-    /// Move all units to the mouse click hit position
+    /// Give units orders based on the returned hit object
     /// </summary>
-    private void MoveUnits()
+    private void GiveOrders()
     {
         RaycastHit hit;
 
         if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit, 100))
         {
-            for (var i = 0; i < units.Count; i++)
+            for (var i = 0; i < SelectedUnits.Count; i++)
             {
                 if (hit.transform.gameObject.TryGetComponent(out RessourceSupplier ressourceSupplier))
                 {
-                    if (units[i].transform.TryGetComponent(out Villager villager))
-                    {
-                        villager.UnitCollectState.ChangeCurrentAnimation(ressourceSupplier.AnimationName);
-                        villager.UnitCollectState.SetRessourceSupplier(ressourceSupplier);
-                        villager.UnitMoveStorageState.SetRessourceSupplier(ressourceSupplier);
-                        villager.Unit.UnitStateMachine.ChangeState(villager.UnitMoveCollectState);
-                        villager.Unit.AgentController.GoToDestination(ressourceSupplier.transform.position);
-                    }
+                    SetUnitGatherOrder(SelectedUnits[i], ressourceSupplier);
                 }
                 else if (hit.transform.gameObject.TryGetComponent(out BuildingConstruction buildingConstruction))
                 {
-                    if (units[i].transform.TryGetComponent(out Villager villager))
-                    {
-                        villager.SetBuildingConstruction(buildingConstruction);
-                        villager.Unit.UnitStateMachine.ChangeState(villager.UnitMoveConstructionState);
-                        villager.Unit.AgentController.GoToDestination(buildingConstruction.transform.position);
-                    }
+                    SetUnitConstructOrder(SelectedUnits[i], buildingConstruction);
                 }
                 else if (hit.transform.gameObject.TryGetComponent(out Enemy enemy))
                 {
-                    units[i].UnitStateMachine.ChangeState(units[i].UnitMoveAttackState);
-                    units[i].AgentController.GoToDestination(enemy.transform.position);
-                    units[i].UnitAttackState.target = enemy.gameObject;
-                    units[i].UnitMoveAttackState.target = enemy.gameObject;
+                    SetUnitAttackOrder(SelectedUnits[i], enemy);
                 }
                 else
                 {
-                    units[i].UnitStateMachine.ChangeState(units[i].UnitWalkState);
-                    units[i].AgentController.GoToDestination(hit.point);
+                    SetUnitMoveOrder(SelectedUnits[i], hit);
                 }
             }
         }
     }
 
     /// <summary>
-    /// Remove every unit in the unit list
+    /// Make units gather ressources to the ressource supplier
     /// </summary>
-    private void ClearUnits()
+    /// <param name="unit"></param>
+    /// <param name="ressourceSupplier"></param>
+    private void SetUnitGatherOrder(Unit unit, RessourceSupplier ressourceSupplier)
     {
-        for (var i = 0; i < units.Count; i++)
+        if (unit.transform.TryGetComponent(out Villager villager))
         {
-            units[i].SelectedTarget.PlayUnselectAnimation();
-            units[i].HealthVisual.PlayUnselectAnimation();
+            villager.UnitCollectState.ChangeCurrentAnimation(ressourceSupplier.AnimationName);
+            villager.UnitCollectState.SetRessourceSupplier(ressourceSupplier);
+            villager.UnitMoveStorageState.SetRessourceSupplier(ressourceSupplier);
+            villager.Unit.UnitStateMachine.ChangeState(villager.UnitMoveCollectState);
+            villager.Unit.AgentController.GoToDestination(ressourceSupplier.transform.position);
         }
+    }
 
-        units.Clear();
+    /// <summary>
+    /// Make units construct the selected building
+    /// </summary>
+    /// <param name="unit"></param>
+    /// <param name="buildingConstruction"></param>
+    private void SetUnitConstructOrder(Unit unit, BuildingConstruction buildingConstruction)
+    {
+        if (unit.transform.TryGetComponent(out Villager villager))
+        {
+            villager.SetBuildingConstruction(buildingConstruction);
+            villager.Unit.UnitStateMachine.ChangeState(villager.UnitMoveConstructionState);
+            villager.Unit.AgentController.GoToDestination(buildingConstruction.transform.position);
+        }
+    }
+
+    /// <summary>
+    /// Make the units attack an enemy
+    /// </summary>
+    /// <param name="unit"></param>
+    /// <param name="enemy"></param>
+    private void SetUnitAttackOrder(Unit unit, Enemy enemy)
+    {
+        unit.UnitStateMachine.ChangeState(unit.UnitMoveAttackState);
+        unit.AgentController.GoToDestination(enemy.transform.position);
+        unit.UnitAttackState.target = enemy.gameObject;
+        unit.UnitMoveAttackState.target = enemy.gameObject;
+    }
+
+    /// <summary>
+    /// Make the units move to a specific point
+    /// </summary>
+    /// <param name="unit"></param>
+    /// <param name="hit"></param>
+    private void SetUnitMoveOrder(Unit unit, RaycastHit hit)
+    {
+        unit.UnitStateMachine.ChangeState(unit.UnitWalkState);
+        unit.AgentController.GoToDestination(hit.point);
     }
 }

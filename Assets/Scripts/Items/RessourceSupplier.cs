@@ -8,6 +8,7 @@ public class RessourceSupplier : MonoBehaviour, IEntity
     [SerializeField] private HealthVisual healthVisual;
     private int amount;
     [field: SerializeField] public string AnimationName { get; private set; }
+    [SerializeField] public VillagerTool villagerTool;
 
     void Start()
     {

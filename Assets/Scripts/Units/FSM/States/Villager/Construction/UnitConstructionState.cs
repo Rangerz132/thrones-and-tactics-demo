@@ -23,6 +23,7 @@ public class UnitConstructionState : UnitGatherState
         // Add this villager to the list of the building constructors
         villager.BuildingConstruction.villagers.Add(villager);
         villager.BuildingConstruction.BuildingConstructionStateManager.ChangeState(villager.BuildingConstruction.BuildingConstructionAssembleState);
+        villager.EnableTool(VillagerTool.Hammer);
     }
 
     public override void Exit()

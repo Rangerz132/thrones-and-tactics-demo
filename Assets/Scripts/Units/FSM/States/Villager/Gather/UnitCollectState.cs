@@ -42,6 +42,7 @@ public class UnitCollectState : UnitGatherState
     public override void Enter()
     {
         base.Enter();
+        villager.EnableTool(ressourceSupplier.villagerTool);
     }
 
     public override void Exit()
